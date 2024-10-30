@@ -72,9 +72,9 @@ public class DriveMode extends LinearOpMode {
         BackLeft  = hardwareMap.get(DcMotor.class, "backleft");
         BackRight = hardwareMap.get(DcMotor.class, "backright");
 
-        FrontLeft.setDirection(DcMotor.Direction.REVERSE);
-        BackLeft.setDirection(DcMotor.Direction.REVERSE);
-        FrontRight.setDirection(DcMotor.Direction.FORWARD);
+        FrontLeft.setDirection(DcMotor.Direction.FORWARD);
+        BackLeft.setDirection(DcMotor.Direction.FORWARD);
+        FrontRight.setDirection(DcMotor.Direction.REVERSE);
         BackRight.setDirection(DcMotor.Direction.REVERSE);
     }
 }
