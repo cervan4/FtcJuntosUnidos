@@ -31,6 +31,8 @@ public class OdometryAutonomous extends LinearOpMode {
     double OPcircumference = 2.0*Math.PI*(16.0/25.4);
     private boolean rightStop = false;
     private boolean leftStop = false;
+    double localTargetTick;
+    private double tileMatLength = 12*2;
 
     @Override
     public void runOpMode() {
@@ -41,7 +43,31 @@ public class OdometryAutonomous extends LinearOpMode {
 
         waitForStart();
 
-        GoForward(FORWARD_SPEED,1.5);
+        resetTicks();
+
+        localTargetTick = InchesToTicks(tileMatLength*0.9);
+        strafeRight(localTargetTick, -0.4, 1);
+
+        localTargetTick = (InchesToTicks(tileMatLength*2.85));
+        driveForward(localTargetTick, -0.5, 1);
+
+        localTargetTick = InchesToTicks(tileMatLength*0.8);
+        strafeLeft(localTargetTick, -0.4, 1);
+
+        localTargetTick = (InchesToTicks(tileMatLength*0.5));
+        driveBackward(localTargetTick, -0.5, 1);
+
+        localTargetTick = InchesToTicks(tileMatLength*0.9);
+        strafeRight(localTargetTick, -0.4, 1);
+
+        localTargetTick = (InchesToTicks(tileMatLength*4.0));
+        driveBackward(localTargetTick, -0.5, 1);
+
+        localTargetTick = InchesToTicks(tileMatLength*0.5);
+        strafeLeft(localTargetTick, -0.4, 1);
+
+
+        telemAllTicks("None");
         }
     //This method is used to setup the hardware motors and sensors need to be setup here.
     private void SetupHardware() {
