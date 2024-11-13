@@ -6,7 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name="Robot: Auto Drive By Time", group="Robot")
+@Autonomous(name="Odometry", group="Robot")
 public class OdometryAutonomous extends LinearOpMode {
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor FrontLeft = null;
