@@ -16,23 +16,15 @@ public class OdometryAutonomous extends LinearOpMode {
 
     private DcMotor leftEncoderMotor = null;
     private double leftEncoderPos = 0;
-    private double deltaLeftEncoder = 0;
 
     private DcMotor rightEncoderMotor = null;
     private double rightEncoderPos = 0;
-    private double deltaRightEncoder = 0;
 
     private DcMotor centerEncoderMotor = null;
     private double centerEncoderPos = 0;
-    private double deltaCenterEncoder = 0;
 
-    static final double     FORWARD_SPEED = 0.6;
-    static final double     TURN_SPEED    = 0.5;
-    double OPcircumference = 2.0*Math.PI*(16.0/25.4);
     private boolean rightStop = false;
     private boolean leftStop = false;
-    double localTargetTick;
-    private double tileMatLength = 12*2;
 
     @Override
     public void runOpMode() {
@@ -42,33 +34,30 @@ public class OdometryAutonomous extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
-
         resetTicks();
+        int targetTick = calculateTicksForOneFoot(1.88976,2000);
+        telemAllTicks("None");
 
-        localTargetTick = InchesToTicks(tileMatLength*0.9);
-        strafeRight(localTargetTick, -0.4, 1);
-
-        localTargetTick = (InchesToTicks(tileMatLength*2.85));
-        driveForward(localTargetTick, -0.5, 1);
-
-        localTargetTick = InchesToTicks(tileMatLength*0.8);
-        strafeLeft(localTargetTick, -0.4, 1);
-
-        localTargetTick = (InchesToTicks(tileMatLength*0.5));
-        driveBackward(localTargetTick, -0.5, 1);
-
-        localTargetTick = InchesToTicks(tileMatLength*0.9);
-        strafeRight(localTargetTick, -0.4, 1);
-
-        localTargetTick = (InchesToTicks(tileMatLength*4.0));
-        driveBackward(localTargetTick, -0.5, 1);
-
-        localTargetTick = InchesToTicks(tileMatLength*0.5);
-        strafeLeft(localTargetTick, -0.4, 1);
-
+        driveForward(targetTick, 0.2, 1);
 
         telemAllTicks("None");
-        }
+    }
+    public static int calculateTicksForOneFoot(double wheelDiameterInches, int ticksPerRotation) {
+        // 1 foot = 12 inches
+        double distanceToMoveInInches = 10.0;
+
+        // Calculate the circumference of the wheel
+        double circumferenceInches = Math.PI * wheelDiameterInches;
+
+        // Calculate the number of wheel rotations needed to move 1 foot (12 inches)
+        double rotationsNeeded = distanceToMoveInInches / circumferenceInches;
+
+        // Calculate the number of ticks for 1 foot
+        int ticksNeeded = (int) (rotationsNeeded * ticksPerRotation);
+
+        return ticksNeeded;
+    }
+
     //This method is used to setup the hardware motors and sensors need to be setup here.
     private void SetupHardware() {
         FrontLeft  = hardwareMap.get(DcMotor.class, "frontleft");
@@ -76,51 +65,41 @@ public class OdometryAutonomous extends LinearOpMode {
         BackLeft  = hardwareMap.get(DcMotor.class, "backleft");
         BackRight = hardwareMap.get(DcMotor.class, "backright");
 
-        FrontLeft.setDirection(DcMotor.Direction.REVERSE);
+        FrontLeft.setDirection(DcMotor.Direction.FORWARD);
         BackLeft.setDirection(DcMotor.Direction.REVERSE);
         FrontRight.setDirection(DcMotor.Direction.FORWARD);
-        BackRight.setDirection(DcMotor.Direction.FORWARD);
+        BackRight.setDirection(DcMotor.Direction.REVERSE);
 
         leftEncoderMotor = hardwareMap.get(DcMotor.class, "frontleft");
         rightEncoderMotor = hardwareMap.get(DcMotor.class, "frontright");
         centerEncoderMotor = hardwareMap.get(DcMotor.class, "backleft");
 
         leftEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        rightEncoderMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        centerEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-    }
-    private void GoForward(double power, double time){
-        // Step 1:  Drive forward for 3 seconds
-        FrontLeft.setPower(power);
-        BackLeft.setPower(power);
-        FrontRight.setPower(power);
-        BackRight.setPower(power);
-        runtime.reset();
-        while (opModeIsActive() && (runtime.seconds() < time)) {
-            telemetry.addData("Path", "Leg 1: %4.1f S Elapsed", runtime.seconds());
-            telemetry.update();
-        }
-        FrontLeft.setPower(0);
-        BackLeft.setPower(0);
-        FrontRight.setPower(0);
-        BackRight.setPower(0);
+        rightEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        centerEncoderMotor.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
     public void driveForward(double targetTicks, double power, long sleep) {
+        rightStop = false;
+        leftStop = false;
         resetTicks();
         setAllPower(power);
 
         telemAllTicks("Forward");
 
-        while (!(rightStop && leftStop)) {
+        while (!rightStop && !leftStop) {
             if (getRightTicks() >= targetTicks) {
                 rightStop = true;
-                stopRightPower();
+                stopAllPower();
             }
             if (getLeftTicks() >= targetTicks) {
                 leftStop = true;
-                stopLeftPower();
+                stopAllPower();
             }
+            telemetry.addData("Right tick", getRightTicks());
+            telemetry.addData("Left tick", getLeftTicks());
+            telemetry.addData("Target tick", targetTicks);
+            telemetry.update();
         }
 
         telemAllTicks("Forward");
@@ -133,89 +112,6 @@ public class OdometryAutonomous extends LinearOpMode {
 
         sleep(1000*sleep);
     }
-
-    public void driveBackward(double targetTicks, double power, long sleep) {
-        resetTicks();
-        setAllPower(-power);
-
-        telemAllTicks("Backward");
-
-        while (!(rightStop && leftStop)) {
-            if (Math.abs(getRightTicks()) >= targetTicks) {
-                rightStop = true;
-                stopRightPower();
-            }
-            if (Math.abs(getLeftTicks()) >= targetTicks) {
-                leftStop = true;
-                stopLeftPower();
-            }
-        }
-
-        telemAllTicks("Backward");
-
-        rightStop = false;
-        leftStop = false;
-        stopAllPower();
-        resetTicks();
-
-        sleep(1000*sleep);
-    }
-
-    public void strafeRight(double targetTicks, double power, long sleep) {
-        setStrafingDrive();
-        resetTicks();
-        setAllPower(power);
-
-        telemAllTicks("Right");
-
-        while (getCenterTicks() < targetTicks){
-
-        }
-
-        telemAllTicks("Right");
-
-        stopAllPower();
-        resetTicks();
-        setNormalDrive();
-
-        sleep(1000*sleep);
-    }
-
-    public void strafeLeft(double targetTicks, double power, long sleep) {
-        setStrafingDrive();
-        resetTicks();
-        setAllPower(-power);
-
-        telemAllTicks("Left");
-
-        while (Math.abs(getCenterTicks()) < targetTicks){
-            telemAllTicks("Left");
-        }
-
-        telemAllTicks("Left");
-
-        stopAllPower();
-        resetTicks();
-        setNormalDrive();
-
-        sleep(1000*sleep);
-    }
-
-
-    public void setNormalDrive(){
-        FrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
-        FrontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-        BackRight.setDirection(DcMotorSimple.Direction.REVERSE);
-        BackLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-    }
-
-    public void setStrafingDrive(){
-        FrontRight.setDirection(DcMotorSimple.Direction.FORWARD);
-        FrontLeft.setDirection(DcMotorSimple.Direction.FORWARD);
-        BackRight.setDirection(DcMotorSimple.Direction.REVERSE);
-        BackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-    }
-
 
     public void resetTicks(){
         resetLeftTicks();
@@ -237,32 +133,12 @@ public class OdometryAutonomous extends LinearOpMode {
         BackRight.setPower(0);
     }
 
-    public void setLeftPower(double p){
-        FrontLeft.setPower(p);
-        FrontRight.setPower(p);
-    }
-
-    public void setRightPower(double p){
-        FrontRight.setPower(p);
-        BackRight.setPower(p);
-    }
-
-    public void stopLeftPower(){
-        FrontLeft.setPower(0);
-        BackLeft.setPower(0);
-    }
-
-    public void stopRightPower(){
-        FrontRight.setPower(0);
-        BackRight.setPower(0);
-    }
-
     public void resetLeftTicks(){
         leftEncoderPos = leftEncoderMotor.getCurrentPosition();
     }
 
     public double getLeftTicks(){
-        return (-(leftEncoderMotor.getCurrentPosition() - leftEncoderPos));
+        return (leftEncoderMotor.getCurrentPosition() - leftEncoderPos);
     }
 
     public void resetRightTicks(){
@@ -288,17 +164,5 @@ public class OdometryAutonomous extends LinearOpMode {
         telemetry.addData("Center pos", getCenterTicks());
         telemetry.update();
     }
-
-    public double TicksToInches(double ticks){
-        double rev = (double)ticks/2000;
-        double inches = OPcircumference * rev;
-        return inches;
-    }
-    public double InchesToTicks(double inches){
-        double rev = inches/OPcircumference;
-        double tick = 2000*rev;
-        return tick;
-    }
-
 }
 
