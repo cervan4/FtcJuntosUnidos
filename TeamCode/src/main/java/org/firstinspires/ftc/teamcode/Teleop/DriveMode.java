@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
-
+import com.qualcomm.robotcore.hardware.Servo;
 @TeleOp(name="Drive Mode", group="Drive Mode")
 public class DriveMode extends LinearOpMode {
 
@@ -14,7 +14,9 @@ public class DriveMode extends LinearOpMode {
     private DcMotor BackLeft = null;
     private DcMotor BackRight = null;
 
-
+    private Servo Clawservo = null;
+    static final double MAX_POS = 1.0;
+    static final double MIN_POS = 0.5;
     @Override
     public void runOpMode() {
         SetupHardware();
@@ -34,10 +36,18 @@ public class DriveMode extends LinearOpMode {
         double max;
 
         // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-        double axial   = -gamepad1.left_stick_y;  // Note: pushing stick forward gives negative value
-        double lateral =  gamepad1.left_stick_x;
+        double axial   = -gamepad1.left_stick_x;  // Note: pushing stick forward gives negative value
+        double lateral =  gamepad1.left_stick_y;
         double yaw     =  gamepad1.right_stick_x;
+        boolean open = gamepad1.right_bumper;
+        boolean close = gamepad1.left_bumper;
 
+        if (open){
+            Clawservo.setPosition(MAX_POS);
+                }
+        if (close){
+            Clawservo.setPosition(MIN_POS);
+        }
         double leftFrontPower  = axial + lateral + yaw;
         double rightFrontPower = axial - lateral - yaw;
         double leftBackPower   = axial - lateral + yaw;
@@ -71,7 +81,7 @@ public class DriveMode extends LinearOpMode {
         FrontRight = hardwareMap.get(DcMotor.class, "frontright");
         BackLeft  = hardwareMap.get(DcMotor.class, "backleft");
         BackRight = hardwareMap.get(DcMotor.class, "backright");
-
+        Clawservo = hardwareMap.get (Servo.class,"Clawservo");
         FrontLeft.setDirection(DcMotor.Direction.FORWARD);
         BackLeft.setDirection(DcMotor.Direction.FORWARD);
         FrontRight.setDirection(DcMotor.Direction.REVERSE);

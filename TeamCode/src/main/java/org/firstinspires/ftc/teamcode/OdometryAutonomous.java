@@ -39,6 +39,8 @@ public class OdometryAutonomous extends LinearOpMode {
         telemAllTicks("None");
 
         driveForward(targetTick, 0.2, 1);
+        driveForward(targetTick, 0.2, 1);
+        driveForward(targetTick, 0.2, 1);
 
         telemAllTicks("None");
     }
