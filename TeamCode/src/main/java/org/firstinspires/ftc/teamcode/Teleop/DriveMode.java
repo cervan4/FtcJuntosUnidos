@@ -13,6 +13,8 @@ public class DriveMode extends LinearOpMode {
     private DcMotor FrontRight = null;
     private DcMotor BackLeft = null;
     private DcMotor BackRight = null;
+    private DcMotor VerticalLiftMotor = null;
+    private Boolean isCurrentDriveInReverse = false;
 
     private Servo Clawservo = null;
     static final double MAX_POS = 1.0;
@@ -48,6 +50,27 @@ public class DriveMode extends LinearOpMode {
         if (close){
             Clawservo.setPosition(MIN_POS);
         }
+        if(gamepad1.dpad_up){
+            VerticalLiftMotor.setPower(1);
+        }else if(gamepad1.dpad_down){
+            VerticalLiftMotor.setPower(-1);
+        }else if(gamepad1.y){
+            VerticalLiftMotor.setPower(0.1);
+        }else {
+
+            VerticalLiftMotor.setPower(0);
+        }
+
+        if(gamepad1.x && gamepad1.a){
+            if(!isCurrentDriveInReverse) {
+                SwitchDriveToReverse();
+                isCurrentDriveInReverse = true;
+            }else{
+                SetupNormalDrive();
+                isCurrentDriveInReverse = false;
+            }
+        }
+
         double leftFrontPower  = axial + lateral + yaw;
         double rightFrontPower = axial - lateral - yaw;
         double leftBackPower   = axial - lateral + yaw;
@@ -75,6 +98,13 @@ public class DriveMode extends LinearOpMode {
         telemetry.update();
     }
 
+    public void SwitchDriveToReverse(){
+        FrontLeft.setDirection(DcMotor.Direction.REVERSE);
+        BackLeft.setDirection(DcMotor.Direction.REVERSE);
+        FrontRight.setDirection(DcMotor.Direction.FORWARD);
+        BackRight.setDirection(DcMotor.Direction.FORWARD);
+    }
+
     //This method is used to setup the hardware motors and sensors need to be setup here.
     private void SetupHardware() {
         FrontLeft  = hardwareMap.get(DcMotor.class, "frontleft");
@@ -82,6 +112,12 @@ public class DriveMode extends LinearOpMode {
         BackLeft  = hardwareMap.get(DcMotor.class, "backleft");
         BackRight = hardwareMap.get(DcMotor.class, "backright");
         Clawservo = hardwareMap.get (Servo.class,"Clawservo");
+        VerticalLiftMotor = hardwareMap.get(DcMotor.class, "verticalLift");
+        SetupNormalDrive();
+        VerticalLiftMotor.setDirection(DcMotor.Direction.REVERSE);
+    }
+
+    private void SetupNormalDrive(){
         FrontLeft.setDirection(DcMotor.Direction.FORWARD);
         BackLeft.setDirection(DcMotor.Direction.FORWARD);
         FrontRight.setDirection(DcMotor.Direction.REVERSE);
