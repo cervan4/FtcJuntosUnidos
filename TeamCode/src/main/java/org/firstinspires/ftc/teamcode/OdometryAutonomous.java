@@ -110,6 +110,40 @@ public class OdometryAutonomous extends LinearOpMode {
 
     }
 
+    public void driveForward(double targetTicks, double power, long sleep) {
+        rightStop = false;
+        leftStop = false;
+        resetTicks();
+
+        telemAllTicks("Forward");
+        setAllPower(power);
+
+        while (!rightStop && !leftStop) {
+            if (getRightTicks() >= targetTicks) {
+                rightStop = true;
+                stopAllPower();
+            }
+            if (getLeftTicks() >= targetTicks) {
+                leftStop = true;
+                stopAllPower();
+            }
+            telemetry.addData("Right tick", getRightTicks());
+            telemetry.addData("Left tick", getLeftTicks());
+            telemetry.addData("Target tick", targetTicks);
+            telemetry.update();
+        }
+
+        telemAllTicks("Forward");
+
+        rightStop = false;
+        leftStop = false;
+
+        stopAllPower();
+        resetTicks();
+
+        sleep(1000*sleep);
+    }
+
     public void resetTicks(){
         resetLeftTicks();
         resetRightTicks();
