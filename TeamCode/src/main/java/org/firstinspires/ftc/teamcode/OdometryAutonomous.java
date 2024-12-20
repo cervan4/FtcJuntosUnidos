@@ -38,9 +38,8 @@ public class OdometryAutonomous extends LinearOpMode {
         int targetTick = calculateTicksForOneFoot(1.88976,2000);
         telemAllTicks("None");
 
-        driveForward(targetTick, 0.2, 1);
-        driveForward(targetTick, 0.2, 1);
-        driveForward(targetTick, 0.2, 1);
+        //driveForward(targetTick, 0.2, 1);
+        MoveLeft(targetTick,0.2,1);
 
         telemAllTicks("None");
     }
@@ -81,15 +80,18 @@ public class OdometryAutonomous extends LinearOpMode {
         centerEncoderMotor.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 
-    public void driveForward(double targetTicks, double power, long sleep) {
+    public void MoveLeft(double targetTicks, double power, long sleep){
         rightStop = false;
         leftStop = false;
         resetTicks();
-        setAllPower(power);
-
-        telemAllTicks("Forward");
+        telemAllTicks("Moving Left");
+        FrontLeft.setPower(-power);
+        FrontRight.setPower(power);
+        BackLeft.setPower(power);
+        BackRight.setPower(-power);
 
         while (!rightStop && !leftStop) {
+
             if (getRightTicks() >= targetTicks) {
                 rightStop = true;
                 stopAllPower();
@@ -102,17 +104,10 @@ public class OdometryAutonomous extends LinearOpMode {
             telemetry.addData("Left tick", getLeftTicks());
             telemetry.addData("Target tick", targetTicks);
             telemetry.update();
+
         }
-
-        telemAllTicks("Forward");
-
-        rightStop = false;
-        leftStop = false;
-
-        stopAllPower();
-        resetTicks();
-
         sleep(1000*sleep);
+
     }
 
     public void resetTicks(){
