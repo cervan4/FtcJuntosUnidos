@@ -5,6 +5,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.Servo;
+
+
 @TeleOp(name="Drive Mode", group="Drive Mode")
 public class DriveMode extends LinearOpMode {
 
@@ -14,11 +16,12 @@ public class DriveMode extends LinearOpMode {
     private DcMotor BackLeft = null;
     private DcMotor BackRight = null;
     private DcMotor VerticalLiftMotor = null;
-    private Boolean isCurrentDriveInReverse = false;
 
     private Servo Clawservo = null;
+    private Servo IntakeServo = null;
     static final double MAX_POS = 1.0;
     static final double MIN_POS = 0.5;
+
     @Override
     public void runOpMode() {
         SetupHardware();
@@ -31,6 +34,11 @@ public class DriveMode extends LinearOpMode {
         while (opModeIsActive()) {
             DriveFunctionality();
         }
+
+        FrontLeft.setPower(0);
+        FrontRight.setPower(0);
+        BackLeft.setPower(0);
+        BackRight.setPower(0);
     }
 
     //This function controls basic function such as moving forward, Backward, Left and Right.
@@ -40,7 +48,7 @@ public class DriveMode extends LinearOpMode {
         // POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
         double axial   = -gamepad1.left_stick_x;  // Note: pushing stick forward gives negative value
         double lateral =  gamepad1.left_stick_y;
-        double yaw     =  gamepad1.right_stick_x;
+        double yaw     =  -gamepad1.right_stick_x;
         boolean open = gamepad1.right_bumper;
         boolean close = gamepad1.left_bumper;
 
@@ -57,19 +65,16 @@ public class DriveMode extends LinearOpMode {
         }else if(gamepad1.y){
             VerticalLiftMotor.setPower(0.1);
         }else {
-
             VerticalLiftMotor.setPower(0);
         }
-
-        if(gamepad1.x && gamepad1.a){
-            if(!isCurrentDriveInReverse) {
-                SwitchDriveToReverse();
-                isCurrentDriveInReverse = true;
-            }else{
-                SetupNormalDrive();
-                isCurrentDriveInReverse = false;
-            }
+        if(gamepad1.x){
+            IntakeServo.setDirection(Servo.Direction.REVERSE);
+            IntakeServo.setPosition(MAX_POS);
+        }else{
+            IntakeServo.setPosition(0);//do nothing
         }
+
+
 
         double leftFrontPower  = axial + lateral + yaw;
         double rightFrontPower = axial - lateral - yaw;
@@ -86,7 +91,6 @@ public class DriveMode extends LinearOpMode {
             leftBackPower   /= max;
             rightBackPower  /= max;
         }
-
         FrontLeft.setPower(leftFrontPower);
         FrontRight.setPower(rightFrontPower);
         BackLeft.setPower(leftBackPower);
@@ -98,13 +102,6 @@ public class DriveMode extends LinearOpMode {
         telemetry.update();
     }
 
-    public void SwitchDriveToReverse(){
-        FrontLeft.setDirection(DcMotor.Direction.REVERSE);
-        BackLeft.setDirection(DcMotor.Direction.REVERSE);
-        FrontRight.setDirection(DcMotor.Direction.FORWARD);
-        BackRight.setDirection(DcMotor.Direction.FORWARD);
-    }
-
     //This method is used to setup the hardware motors and sensors need to be setup here.
     private void SetupHardware() {
         FrontLeft  = hardwareMap.get(DcMotor.class, "frontleft");
@@ -112,16 +109,22 @@ public class DriveMode extends LinearOpMode {
         BackLeft  = hardwareMap.get(DcMotor.class, "backleft");
         BackRight = hardwareMap.get(DcMotor.class, "backright");
         Clawservo = hardwareMap.get (Servo.class,"Clawservo");
+        IntakeServo = hardwareMap.get (Servo.class,"intakeservo");
         VerticalLiftMotor = hardwareMap.get(DcMotor.class, "verticalLift");
         SetupNormalDrive();
         VerticalLiftMotor.setDirection(DcMotor.Direction.REVERSE);
     }
 
     private void SetupNormalDrive(){
-        FrontLeft.setDirection(DcMotor.Direction.FORWARD);
-        BackLeft.setDirection(DcMotor.Direction.FORWARD);
-        FrontRight.setDirection(DcMotor.Direction.REVERSE);
-        BackRight.setDirection(DcMotor.Direction.REVERSE);
+        FrontLeft.setDirection(DcMotor.Direction.REVERSE);
+        BackLeft.setDirection(DcMotor.Direction.REVERSE);
+        FrontRight.setDirection(DcMotor.Direction.FORWARD);
+        BackRight.setDirection(DcMotor.Direction.FORWARD);
+
+        FrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BackLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 }
 
