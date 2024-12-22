@@ -28,6 +28,7 @@ public class OdometryAutonomous extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+
         SetupHardware();
 
         telemetry.addData("Status", "Ready to run");    //
@@ -35,17 +36,19 @@ public class OdometryAutonomous extends LinearOpMode {
 
         waitForStart();
         resetTicks();
-        int targetTick = calculateTicksForOneFoot(1.88976,2000);
         telemAllTicks("None");
 
-        //driveForward(targetTick, 0.2, 1);
-        MoveLeft(targetTick,0.2,1);
+        driveForward(calculateTicks(10), 0.2, 1);
+        //MoveLeft(targetTick,0.2,1);
+
 
         telemAllTicks("None");
     }
-    public static int calculateTicksForOneFoot(double wheelDiameterInches, int ticksPerRotation) {
-        // 1 foot = 12 inches
-        double distanceToMoveInInches = 10.0;
+    //will calculate ticks for one foot
+    //for the robot to move 1 foot call calculateTicks 10 inches
+    public static int calculateTicks(int distanceToMoveInInches) {
+        double wheelDiameterInches = 1.88976;
+        int ticksPerRotation = 2000;
 
         // Calculate the circumference of the wheel
         double circumferenceInches = Math.PI * wheelDiameterInches;
