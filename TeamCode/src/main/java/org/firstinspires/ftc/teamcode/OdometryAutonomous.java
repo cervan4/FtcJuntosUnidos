@@ -37,8 +37,8 @@ public class OdometryAutonomous extends LinearOpMode {
         waitForStart();
         resetTicks();
         telemAllTicks("None");
-
-        driveForward(calculateTicks(10), 0.2, 1);
+        double ticks =  calculateTicks(10);
+        driveForward(ticks, 0.2, 1);
         //MoveLeft(targetTick,0.2,1);
 
 

@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Teleop;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -16,11 +17,15 @@ public class DriveMode extends LinearOpMode {
     private DcMotor BackLeft = null;
     private DcMotor BackRight = null;
     private DcMotor VerticalLiftMotor = null;
-
-    private Servo Clawservo = null;
-    private Servo IntakeServo = null;
+    private DcMotor IntakeVerticalMotor = null;
+    private DcMotor IntakeHorizontalMotor = null;
+    private Servo ClawServo = null;
+    private CRServo IntakeServo = null;
     static final double MAX_POS = 1.0;
     static final double MIN_POS = 0.5;
+
+
+
 
     @Override
     public void runOpMode() {
@@ -53,11 +58,19 @@ public class DriveMode extends LinearOpMode {
         boolean close = gamepad1.left_bumper;
 
         if (open){
-            Clawservo.setPosition(MAX_POS);
-                }
-        if (close){
-            Clawservo.setPosition(MIN_POS);
+            ClawServo.setPosition(MAX_POS);
+        } else if (close){
+            ClawServo.setPosition(MIN_POS);
         }
+
+        if(gamepad1.x){
+            IntakeServo.setPower(-1);
+        } else if(gamepad1.b){
+            IntakeServo.setPower(1);
+        }else{
+            IntakeServo.setPower(0);
+        }
+
         if(gamepad1.dpad_up){
             VerticalLiftMotor.setPower(1);
         }else if(gamepad1.dpad_down){
@@ -67,12 +80,19 @@ public class DriveMode extends LinearOpMode {
         }else {
             VerticalLiftMotor.setPower(0);
         }
-        if(gamepad1.x){
-            IntakeServo.setDirection(Servo.Direction.REVERSE);
-            IntakeServo.setPosition(MAX_POS);
+
+        if(gamepad1.dpad_right){
+            IntakeHorizontalMotor.setPower(-1);
+        }else if(gamepad1.dpad_left){
+            IntakeHorizontalMotor.setPower(1);
         }else{
-            IntakeServo.setPosition(0);//do nothing
+            IntakeHorizontalMotor.setPower(0);
         }
+
+
+        IntakeVerticalMotor.setPower(-gamepad1.right_trigger);
+        IntakeVerticalMotor.setPower(gamepad1.left_trigger);
+
 
 
 
@@ -108,9 +128,11 @@ public class DriveMode extends LinearOpMode {
         FrontRight = hardwareMap.get(DcMotor.class, "frontright");
         BackLeft  = hardwareMap.get(DcMotor.class, "backleft");
         BackRight = hardwareMap.get(DcMotor.class, "backright");
-        Clawservo = hardwareMap.get (Servo.class,"Clawservo");
-        IntakeServo = hardwareMap.get (Servo.class,"intakeservo");
+        ClawServo = hardwareMap.get (Servo.class,"Clawservo");
+        IntakeServo = hardwareMap.get (CRServo.class,"intakeservo");
         VerticalLiftMotor = hardwareMap.get(DcMotor.class, "verticalLift");
+        IntakeVerticalMotor =  hardwareMap.get(DcMotor.class, "intakeVertical");
+        IntakeHorizontalMotor = hardwareMap.get(DcMotor.class, "intakeHorizontal");
         SetupNormalDrive();
         VerticalLiftMotor.setDirection(DcMotor.Direction.REVERSE);
     }
