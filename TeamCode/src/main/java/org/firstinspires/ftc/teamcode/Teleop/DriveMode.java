@@ -4,8 +4,11 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.Servo;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 
 @TeleOp(name="Drive Mode", group="Drive Mode")
@@ -23,7 +26,10 @@ public class DriveMode extends LinearOpMode {
     private CRServo IntakeServo = null;
     static final double MAX_POS = 1.0;
     static final double MIN_POS = 0.5;
-
+    private IMU Imu = null;
+    private double CurrentRobotAngle = 0;
+    private double RobotStartAngle = 0;
+    private boolean BackUpDrive = false;
 
 
 
@@ -32,19 +38,71 @@ public class DriveMode extends LinearOpMode {
         SetupHardware();
         telemetry.addData("Status", "Initialized");
         telemetry.update();
+        Imu = hardwareMap.get(IMU.class, "imu");
+        RobotStartAngle = Imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
         waitForStart();
         runtime.reset();
+        double leftFrontPower = 0;  // Left Front Wheel Power (LF)
+        double rightFrontPower = 0;  // Right Front Wheel Power (RF)
+        double leftBackPower = 0;  // Left Back Wheel Power (LB)
+        double rightBackPower = 0;  // Right Back Wheel Power (RB)
+        double FieldAngle = 0;
+
 
         while (opModeIsActive()) {
-            DriveFunctionality();
-        }
+            double max; // Used to compare wheel power
+            CurrentRobotAngle = RobotStartAngle - Imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
-        FrontLeft.setPower(0);
-        FrontRight.setPower(0);
-        BackLeft.setPower(0);
-        BackRight.setPower(0);
-    }
+// POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
+            double axial = gamepad1.left_stick_x;  // Note: pushing stick forward gives negative value --
+            double lateral = -gamepad1.left_stick_y;
+            double yaw = -gamepad1.right_stick_x;
+
+
+// Find the maximum value among the powers to normalize the wheel speeds
+
+            telemetry.addData("yaw", yaw);
+            double Speed = Math.sqrt(Math.pow(axial, 2) + Math.pow(lateral, 2));
+
+// Calculate Field Angle based on axial and lateral inputs
+            if (axial == 0) axial = 0.001;  // Prevent division by zero
+            FieldAngle = Math.atan(lateral / axial);
+            if (axial < 0) {
+                FieldAngle = FieldAngle + Math.PI;
+            }
+
+            FieldAngle = FieldAngle + Math.PI;
+
+
+            telemetry.addData("IMU Angle", Imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
+            telemetry.addData("Angle", 360 * FieldAngle / (2 * Math.PI));
+
+            double RobotAngle = FieldAngle - CurrentRobotAngle + Math.PI;
+            leftFrontPower = (((Math.sin(RobotAngle) + Math.cos(RobotAngle)) * Speed) - yaw); // LF
+            rightFrontPower = (((Math.sin(RobotAngle) - Math.cos(RobotAngle)) * Speed) - yaw); // RF
+            leftBackPower = (((-Math.sin(RobotAngle) + Math.cos(RobotAngle)) * Speed) - yaw); // LB
+            rightBackPower = (((-Math.sin(RobotAngle) - Math.cos(RobotAngle)) * Speed) - yaw); // RB
+
+// Normalize the values so no wheel power exceeds 100%
+            max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
+            max = Math.max(max, Math.abs(leftBackPower));
+            max = Math.max(max, Math.abs(rightBackPower));
+
+            if (max > 1.0) {
+                leftFrontPower /= max;
+                rightFrontPower /= max;
+                leftBackPower /= max;
+                rightBackPower /= max;
+            }
+
+                FrontLeft.setPower(leftFrontPower);
+                FrontRight.setPower(rightFrontPower);
+                BackLeft.setPower(leftBackPower);
+                BackRight.setPower(rightBackPower);
+
+        }
+    }//closing while
 
     //This function controls basic function such as moving forward, Backward, Left and Right.
     private void DriveFunctionality() {
@@ -138,10 +196,11 @@ public class DriveMode extends LinearOpMode {
     }
 
     private void SetupNormalDrive(){
-        FrontLeft.setDirection(DcMotor.Direction.REVERSE);
-        BackLeft.setDirection(DcMotor.Direction.REVERSE);
-        FrontRight.setDirection(DcMotor.Direction.FORWARD);
-        BackRight.setDirection(DcMotor.Direction.FORWARD);
+        //original directions are commented next to the motor
+        FrontLeft.setDirection(DcMotor.Direction.FORWARD);//r
+        BackLeft.setDirection(DcMotor.Direction.FORWARD);//r
+        FrontRight.setDirection(DcMotor.Direction.FORWARD);//f
+        BackRight.setDirection(DcMotor.Direction.FORWARD);//f
 
         FrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         FrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
