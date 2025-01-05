@@ -29,6 +29,8 @@ public class DriveMode extends LinearOpMode {
     private IMU Imu = null;
     private double CurrentRobotAngle = 0;
     private double RobotStartAngle = 0;
+    private double FieldAngle = 0;
+    private double robotAngle = 0; 
     private boolean BackUpDrive = false;
 
 
@@ -47,43 +49,30 @@ public class DriveMode extends LinearOpMode {
         double rightFrontPower = 0;  // Right Front Wheel Power (RF)
         double leftBackPower = 0;  // Left Back Wheel Power (LB)
         double rightBackPower = 0;  // Right Back Wheel Power (RB)
-        double FieldAngle = 0;
 
 
         while (opModeIsActive()) {
-            double max; // Used to compare wheel power
-            CurrentRobotAngle = RobotStartAngle - Imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-
-// POV Mode uses left joystick to go forward & strafe, and right joystick to rotate.
-            double axial = gamepad1.left_stick_x;  // Note: pushing stick forward gives negative value --
-            double lateral = -gamepad1.left_stick_y;
+// POV Mode uses left joystick to go forward & strafe, and right joystick to rotate(can have negative values)
+            double lateral = -gamepad1.left_stick_x;
+            double axial = gamepad1.left_stick_y; 
             double yaw = -gamepad1.right_stick_x;
-
-
-// Find the maximum value among the powers to normalize the wheel speeds
-
-            telemetry.addData("yaw", yaw);
-            double Speed = Math.sqrt(Math.pow(axial, 2) + Math.pow(lateral, 2));
-
+            
 // Calculate Field Angle based on axial and lateral inputs
-            if (axial == 0) axial = 0.001;  // Prevent division by zero
-            FieldAngle = Math.atan(lateral / axial);
-            if (axial < 0) {
-                FieldAngle = FieldAngle + Math.PI;
+            CurrentRobotAngle = RobotStartAngle - Imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+           */ if(axial  = 0)axial = 0.001;
+            fieldAngle = Math.atan(lateral/axial);
+
+            if(axial < 0){
+                fieldAngle += Math.PI; 
             }
-
-            FieldAngle = FieldAngle + Math.PI;
-
-
-            telemetry.addData("IMU Angle", Imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES));
-            telemetry.addData("Angle", 360 * FieldAngle / (2 * Math.PI));
-
-            double RobotAngle = FieldAngle - CurrentRobotAngle + Math.PI;
-            leftFrontPower = (((Math.sin(RobotAngle) + Math.cos(RobotAngle)) * Speed) - yaw); // LF
-            rightFrontPower = (((Math.sin(RobotAngle) - Math.cos(RobotAngle)) * Speed) - yaw); // RF
-            leftBackPower = (((-Math.sin(RobotAngle) + Math.cos(RobotAngle)) * Speed) - yaw); // LB
-            rightBackPower = (((-Math.sin(RobotAngle) - Math.cos(RobotAngle)) * Speed) - yaw); // RB
-
+            fieldAngle += Math.PI; 
+            robotAngle = fieldAngle - currentRobotAngle + Math.PI; 
+            /*
+            // the constant that is being multiplied by yaw changes how fast it turns compared to other movement
+            leftFrontPower = lateral*(Math.cos(currentRobotAngle)) + axial*(Math.sin(currentRobotAngle) + yaw*0.1);//1
+            rightFrontPower = lateral*(Math.cos(currentRobotAngle)) - axial*(Math.sin(currentRobotAngle) + yaw*0.1);//2
+            leftBackPower = lateral*(Math.cos(currentRobotAngle)) - axial*(Math.sin(currentRobotAngle) + yaw*0.1);//3
+            rightBackPower = lateral*(Math.cos(currentRobotAngle)) + axial*(Math.sin(currentRobotAngle) + yaw*0.1);//4
 
 // Normalize the values so no wheel power exceeds 100%
             max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
