@@ -84,6 +84,7 @@ public class DriveMode extends LinearOpMode {
             leftBackPower = (((-Math.sin(RobotAngle) + Math.cos(RobotAngle)) * Speed) - yaw); // LB
             rightBackPower = (((-Math.sin(RobotAngle) - Math.cos(RobotAngle)) * Speed) - yaw); // RB
 
+
 // Normalize the values so no wheel power exceeds 100%
             max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
             max = Math.max(max, Math.abs(leftBackPower));
