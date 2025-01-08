@@ -2,9 +2,14 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import com.qualcomm.robotcore.hardware.IMU;
+
 
 @Autonomous(name="Odometry", group="Robot")
 public class OdometryAutonomous extends LinearOpMode {
@@ -13,6 +18,14 @@ public class OdometryAutonomous extends LinearOpMode {
     private DcMotor FrontRight = null;
     private DcMotor BackLeft = null;
     private DcMotor BackRight = null;
+    private DcMotor VerticalLiftMotor = null;
+    private IMU Imu = null;
+    private DcMotor IntakeVerticalMotor = null;
+    private DcMotor IntakeHorizontalMotor = null;
+    private Servo ClawServo = null;
+    private CRServo IntakeServo = null;
+    static final double OPEN = 1.0;
+    static final double CLOSE = 0.5;
 
     private DcMotor leftEncoderMotor = null;
     private double leftEncoderPos = 0;
@@ -25,7 +38,6 @@ public class OdometryAutonomous extends LinearOpMode {
 
     private boolean rightStop = false;
     private boolean leftStop = false;
-
     @Override
     public void runOpMode() {
 
@@ -37,8 +49,7 @@ public class OdometryAutonomous extends LinearOpMode {
         waitForStart();
         resetTicks();
         telemAllTicks("None");
-        double ticks =  calculateTicks(10);
-        driveForward(ticks, 0.2, 1);
+        driveForward(calculateTicks(24), 0.5, 1);
         //MoveLeft(targetTick,0.2,1);
 
 
@@ -68,11 +79,23 @@ public class OdometryAutonomous extends LinearOpMode {
         FrontRight = hardwareMap.get(DcMotor.class, "frontright");
         BackLeft  = hardwareMap.get(DcMotor.class, "backleft");
         BackRight = hardwareMap.get(DcMotor.class, "backright");
+        ClawServo = hardwareMap.get (Servo.class,"Clawservo");
+        IntakeServo = hardwareMap.get (CRServo.class,"intakeservo");
+        VerticalLiftMotor = hardwareMap.get(DcMotor.class, "verticalLift");
+        IntakeVerticalMotor =  hardwareMap.get(DcMotor.class, "intakeVertical");
+        IntakeHorizontalMotor = hardwareMap.get(DcMotor.class, "intakeHorizontal");
+        Imu = hardwareMap.get(IMU.class, "imu");
+
 
         FrontLeft.setDirection(DcMotor.Direction.FORWARD);
         BackLeft.setDirection(DcMotor.Direction.REVERSE);
         FrontRight.setDirection(DcMotor.Direction.FORWARD);
         BackRight.setDirection(DcMotor.Direction.REVERSE);
+
+        FrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BackLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         leftEncoderMotor = hardwareMap.get(DcMotor.class, "frontleft");
         rightEncoderMotor = hardwareMap.get(DcMotor.class, "frontright");
@@ -146,6 +169,59 @@ public class OdometryAutonomous extends LinearOpMode {
 
         sleep(1000*sleep);
     }
+
+    public void liftClaw(double power, int time){
+        VerticalLiftMotor.setPower(power);
+        sleep(time);
+        HoldInPlace();
+    }
+    public void descentClaw(double power, int time){
+        power = -power;
+        VerticalLiftMotor.setPower(power);
+        sleep(time);
+        HoldInPlace();
+    }
+    public void rotate(double targetDegrees, double power){
+        double currentRotation = Imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        double FrontLeftPower;
+        double FrontRightPower;
+        double BackLeftPower;
+        double BackRightPower;
+        if(targetDegrees == 0){
+            return;
+        }
+        else if(targetDegrees < 0){
+            FrontLeftPower = -power;
+            FrontRightPower = power;
+            BackLeftPower = -power;
+            BackRightPower = power;
+        }else{
+            FrontLeftPower = power;
+            FrontRightPower = -power;
+            BackLeftPower = power;
+            BackRightPower = -power;
+        }
+        while(currentRotation < targetDegrees){
+            FrontLeft.setPower(FrontLeftPower);
+            FrontRight.setPower(FrontRightPower);
+            BackLeft.setPower(BackLeftPower);
+            BackRight.setPower(BackRightPower);
+
+            currentRotation = Imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        }
+
+        StopRobot();
+    }
+    public void StopRobot(){
+        FrontLeft.setPower(0);
+        FrontRight.setPower(0);
+        BackRight.setPower(0);
+        BackLeft.setPower(0);
+    }
+    public void HoldInPlace(){
+        VerticalLiftMotor.setPower(0.1);
+    }
+
 
     public void resetTicks(){
         resetLeftTicks();
