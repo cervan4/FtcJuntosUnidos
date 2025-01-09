@@ -24,8 +24,8 @@ public class OdometryAutonomous extends LinearOpMode {
     private DcMotor IntakeHorizontalMotor = null;
     private Servo ClawServo = null;
     private CRServo IntakeServo = null;
-    static final double OPEN = 1.0;
-    static final double CLOSE = 0.5;
+    static final double CLOSE = 1.0;
+    static final double OPEN = 0.5;
 
     private DcMotor leftEncoderMotor = null;
     private double leftEncoderPos = 0;
@@ -47,13 +47,17 @@ public class OdometryAutonomous extends LinearOpMode {
         telemetry.update();
 
         waitForStart();
-        resetTicks();
-        telemAllTicks("None");
-        driveForward(calculateTicks(24), 0.5, 1);
-        //MoveLeft(targetTick,0.2,1);
+        ///the actual moving code for auto
 
+        moveClaw(1,715);
+        ClawServo.setPosition(CLOSE);
+        driveForward(calculateTicks(26), 1);
+        moveClaw(-1,130);
+        ClawServo.setPosition(OPEN);
+        driveBackwards(calculateTicks(-26),1);
+        driveRight(calculateTicks(26),1.0,1);
 
-        telemAllTicks("None");
+        //end of the moving code
     }
     //will calculate ticks for one foot
     //for the robot to move 1 foot call calculateTicks 10 inches
@@ -73,40 +77,7 @@ public class OdometryAutonomous extends LinearOpMode {
         return ticksNeeded;
     }
 
-    //This method is used to setup the hardware motors and sensors need to be setup here.
-    private void SetupHardware() {
-        FrontLeft  = hardwareMap.get(DcMotor.class, "frontleft");
-        FrontRight = hardwareMap.get(DcMotor.class, "frontright");
-        BackLeft  = hardwareMap.get(DcMotor.class, "backleft");
-        BackRight = hardwareMap.get(DcMotor.class, "backright");
-        ClawServo = hardwareMap.get (Servo.class,"Clawservo");
-        IntakeServo = hardwareMap.get (CRServo.class,"intakeservo");
-        VerticalLiftMotor = hardwareMap.get(DcMotor.class, "verticalLift");
-        IntakeVerticalMotor =  hardwareMap.get(DcMotor.class, "intakeVertical");
-        IntakeHorizontalMotor = hardwareMap.get(DcMotor.class, "intakeHorizontal");
-        Imu = hardwareMap.get(IMU.class, "imu");
-
-
-        FrontLeft.setDirection(DcMotor.Direction.FORWARD);
-        BackLeft.setDirection(DcMotor.Direction.REVERSE);
-        FrontRight.setDirection(DcMotor.Direction.FORWARD);
-        BackRight.setDirection(DcMotor.Direction.REVERSE);
-
-        FrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        FrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        BackLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        BackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        leftEncoderMotor = hardwareMap.get(DcMotor.class, "frontleft");
-        rightEncoderMotor = hardwareMap.get(DcMotor.class, "frontright");
-        centerEncoderMotor = hardwareMap.get(DcMotor.class, "backleft");
-
-        leftEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        rightEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        centerEncoderMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-    }
-
-    public void MoveLeft(double targetTicks, double power, long sleep){
+    public void driveLeft(double targetTicks, double power, long sleep){
         rightStop = false;
         leftStop = false;
         resetTicks();
@@ -118,12 +89,8 @@ public class OdometryAutonomous extends LinearOpMode {
 
         while (!rightStop && !leftStop) {
 
-            if (getRightTicks() >= targetTicks) {
+            if (getCenterTicks() >= targetTicks) {
                 rightStop = true;
-                stopAllPower();
-            }
-            if (getLeftTicks() >= targetTicks) {
-                leftStop = true;
                 stopAllPower();
             }
             telemetry.addData("Right tick", getRightTicks());
@@ -136,15 +103,60 @@ public class OdometryAutonomous extends LinearOpMode {
 
     }
 
-    public void driveForward(double targetTicks, double power, long sleep) {
+    //negative ticks (I think)
+    public void driveRight(double targetTicks, double power, long sleep){
         rightStop = false;
         leftStop = false;
         resetTicks();
-
-        telemAllTicks("Forward");
-        setAllPower(power);
+        telemAllTicks("Moving Left");
+        FrontLeft.setPower(power);
+        FrontRight.setPower(-power);
+        BackLeft.setPower(-power);
+        BackRight.setPower(power);
 
         while (!rightStop && !leftStop) {
+
+            if (getCenterTicks() <= -targetTicks) {
+                rightStop = true;
+                stopAllPower();
+            }
+            telemetry.addData("Right tick", getRightTicks());
+            telemetry.addData("Left tick", getLeftTicks());
+            telemetry.addData("Target tick", targetTicks);
+            telemetry.update();
+
+        }
+        sleep(1000*sleep);
+
+    }
+
+    public void driveForward(double targetTicks, long sleep) {
+
+        rightStop = false;
+        leftStop = false;
+
+        double fastPower = 0.6; // Maximum motor power
+        double slowPower = 0.2; // Minimum motor power (to prevent stalling)
+        double slowDownDistance = targetTicks * 0.15; // Distance where it starts slowing down (20% of target)
+        double power;
+        double avgTicks;//need to know how much we have moved
+        double remainingTicks;// Calculate remaining distance
+
+        resetTicks();
+
+        telemAllTicks("Forward");
+
+        while (!rightStop && !leftStop) {
+            avgTicks = (getRightTicks() + getLeftTicks()) / 2;
+            remainingTicks = targetTicks - avgTicks;
+
+            if (remainingTicks <= slowDownDistance) {
+                power = slowPower;
+            }else{
+                power = fastPower;
+            }
+            setAllPower(power);
+
             if (getRightTicks() >= targetTicks) {
                 rightStop = true;
                 stopAllPower();
@@ -170,35 +182,86 @@ public class OdometryAutonomous extends LinearOpMode {
         sleep(1000*sleep);
     }
 
-    public void liftClaw(double power, int time){
-        VerticalLiftMotor.setPower(power);
-        sleep(time);
-        HoldInPlace();
+    public void driveBackwards(double targetTicks, long sleep) {
+
+        rightStop = false;
+        leftStop = false;
+
+        double fastPower = -0.6; // Maximum motor power
+        double slowPower = -0.2; // Minimum motor power (to prevent stalling)
+        double slowDownDistance = targetTicks * 0.15; // Distance where it starts slowing down (20% of target)
+        double power;
+        double avgTicks;//need to know how much we have moved
+        double remainingTicks;// Calculate remaining distance
+
+        resetTicks();
+
+        setAllPower(fastPower);
+        telemAllTicks("Forward");
+
+        while (!rightStop && !leftStop) {
+            avgTicks = (getRightTicks() + getLeftTicks()) / 2;
+            remainingTicks = targetTicks - avgTicks;
+
+            if (remainingTicks >= slowDownDistance) {
+                power = slowPower;
+            }else{
+                power = fastPower;
+            }
+            setAllPower(power);
+
+            if (getRightTicks() <= targetTicks) {
+                rightStop = true;
+                stopAllPower();
+            }
+            if (getLeftTicks() <= targetTicks) {
+                leftStop = true;
+                stopAllPower();
+            }
+            telemetry.addData("Right tick", getRightTicks());
+            telemetry.addData("Left tick", getLeftTicks());
+            telemetry.addData("Target tick", targetTicks);
+            telemetry.update();
+        }
+
+        telemAllTicks("Forward");
+
+        rightStop = false;
+        leftStop = false;
+
+        stopAllPower();
+        resetTicks();
+
+        sleep(1000*sleep);
     }
-    public void descentClaw(double power, int time){
-        power = -power;
+
+
+    public void moveClaw(double power, int time){
         VerticalLiftMotor.setPower(power);
         sleep(time);
         HoldInPlace();
     }
     public void rotate(double targetDegrees, double power){
-        double currentRotation = Imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        double currentRotation = 0;
         double FrontLeftPower;
         double FrontRightPower;
         double BackLeftPower;
         double BackRightPower;
+
+        Imu.resetYaw();
+
         if(targetDegrees == 0){
             return;
         }
         else if(targetDegrees < 0){
             FrontLeftPower = -power;
-            FrontRightPower = power;
             BackLeftPower = -power;
+            FrontRightPower = power;
             BackRightPower = power;
         }else{
             FrontLeftPower = power;
-            FrontRightPower = -power;
             BackLeftPower = power;
+            FrontRightPower = -power;
             BackRightPower = -power;
         }
         while(currentRotation < targetDegrees){
@@ -210,14 +273,9 @@ public class OdometryAutonomous extends LinearOpMode {
             currentRotation = Imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
         }
 
-        StopRobot();
+        setAllPower(0.0);
     }
-    public void StopRobot(){
-        FrontLeft.setPower(0);
-        FrontRight.setPower(0);
-        BackRight.setPower(0);
-        BackLeft.setPower(0);
-    }
+
     public void HoldInPlace(){
         VerticalLiftMotor.setPower(0.1);
     }
@@ -273,6 +331,38 @@ public class OdometryAutonomous extends LinearOpMode {
         telemetry.addData("Right pos", getRightTicks());
         telemetry.addData("Center pos", getCenterTicks());
         telemetry.update();
+    }
+
+    private void SetupHardware() {
+        FrontLeft  = hardwareMap.get(DcMotor.class, "frontleft");
+        FrontRight = hardwareMap.get(DcMotor.class, "frontright");
+        BackLeft  = hardwareMap.get(DcMotor.class, "backleft");
+        BackRight = hardwareMap.get(DcMotor.class, "backright");
+        ClawServo = hardwareMap.get (Servo.class,"Clawservo");
+        IntakeServo = hardwareMap.get (CRServo.class,"intakeservo");
+        VerticalLiftMotor = hardwareMap.get(DcMotor.class, "verticalLift");
+        IntakeVerticalMotor =  hardwareMap.get(DcMotor.class, "intakeVertical");
+        IntakeHorizontalMotor = hardwareMap.get(DcMotor.class, "intakeHorizontal");
+        Imu = hardwareMap.get(IMU.class, "imu");
+
+        VerticalLiftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        FrontLeft.setDirection(DcMotor.Direction.FORWARD);
+        BackLeft.setDirection(DcMotor.Direction.REVERSE);
+        FrontRight.setDirection(DcMotor.Direction.FORWARD);
+        BackRight.setDirection(DcMotor.Direction.REVERSE);
+
+        FrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BackLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        leftEncoderMotor = hardwareMap.get(DcMotor.class, "frontleft");
+        rightEncoderMotor = hardwareMap.get(DcMotor.class, "frontright");
+        centerEncoderMotor = hardwareMap.get(DcMotor.class, "backleft");
+
+        leftEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        centerEncoderMotor.setDirection(DcMotorSimple.Direction.REVERSE);
     }
 }
 
