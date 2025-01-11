@@ -1,5 +1,4 @@
 package org.firstinspires.ftc.teamcode;
-
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -11,8 +10,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import com.qualcomm.robotcore.hardware.IMU;
 
 
-@Autonomous(name="Odometry", group="Robot")
-public class OdometryAutonomous extends LinearOpMode {
+@Autonomous(name="BlueRightOdemetryAuto", group="Robot")
+
+public class BlueRightOdometryAuto extends LinearOpMode{
     private ElapsedTime runtime = new ElapsedTime();
     private DcMotor FrontLeft = null;
     private DcMotor FrontRight = null;
@@ -364,5 +364,7 @@ public class OdometryAutonomous extends LinearOpMode {
         rightEncoderMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         centerEncoderMotor.setDirection(DcMotorSimple.Direction.REVERSE);
     }
-}
 
+
+
+}
