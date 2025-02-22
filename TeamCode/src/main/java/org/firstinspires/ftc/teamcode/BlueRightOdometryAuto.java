@@ -49,10 +49,10 @@ public class BlueRightOdometryAuto extends LinearOpMode{
         waitForStart();
         ///the actual moving code for auto
 
-        moveClaw(1,715);
+        moveClaw(1,765);
         ClawServo.setPosition(CLOSE);
-        driveForward(calculateTicks(26), 1);
-        moveClaw(-1,235);
+        driveForward(calculateTicks(26)+500, 1);
+        moveClaw(-1,305);
         ClawServo.setPosition(OPEN);
         driveBackwards(calculateTicks(-25),1);
         driveRight(calculateTicks(30),1.0,1);

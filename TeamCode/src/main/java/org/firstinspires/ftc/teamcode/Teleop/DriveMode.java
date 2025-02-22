@@ -20,7 +20,7 @@ public class DriveMode extends LinearOpMode {
     private DcMotor IntakeVerticalMotor = null;
     private DcMotor IntakeHorizontalMotor = null;
     private Servo ClawServo = null;
-    private CRServo IntakeServo = null;
+    private DcMotor IntakeMotor = null;
     static final double MAX_POS = 1.0;
     static final double MIN_POS = 0.5;
 
@@ -64,11 +64,11 @@ public class DriveMode extends LinearOpMode {
         }
 
         if(gamepad1.x){
-            IntakeServo.setPower(-1);
+            IntakeMotor.setPower(1.0);
         } else if(gamepad1.b){
-            IntakeServo.setPower(1);
+            IntakeMotor.setPower(-0.7);
         }else{
-            IntakeServo.setPower(0);
+            IntakeMotor.setPower(0);
         }
 
         if(gamepad1.dpad_up){
@@ -128,8 +128,8 @@ public class DriveMode extends LinearOpMode {
         FrontRight = hardwareMap.get(DcMotor.class, "frontright");
         BackLeft  = hardwareMap.get(DcMotor.class, "backleft");
         BackRight = hardwareMap.get(DcMotor.class, "backright");
-        ClawServo = hardwareMap.get (Servo.class,"Clawservo");
-        IntakeServo = hardwareMap.get (CRServo.class,"intakeservo");
+        ClawServo = hardwareMap.get (Servo.class,"ClawServo");
+        IntakeMotor = hardwareMap.get (DcMotor.class,"intakeMotor");
         VerticalLiftMotor = hardwareMap.get(DcMotor.class, "verticalLift");
         IntakeVerticalMotor =  hardwareMap.get(DcMotor.class, "intakeVertical");
         IntakeHorizontalMotor = hardwareMap.get(DcMotor.class, "intakeHorizontal");
